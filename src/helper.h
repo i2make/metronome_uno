@@ -5,7 +5,7 @@
 #include "TM1638.h"
 #include "RotaryEncoder.h"
 
-void tone01();
+void toneLow();
 
 void led_key_display_update();
 

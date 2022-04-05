@@ -4,7 +4,7 @@
 /// variable /////////////////////////////////////////////////
 
 byte previousLed = 8;       // non number of led value (0 ~ 7)
-byte previousClick = 255;
+byte previousClick = 255;   // non number of click value (1 ~ 9)
 byte previousKeys = 0;
 
 // SPI setting
@@ -35,10 +35,12 @@ void setup() {
 }
 
 void loop() {
-    stateMap[0][0] = M_State::STOP;
+
+    //stateMap[0][0] = M_State::STOP;
+
     /// polling
     led_key_read_button();
-
+    Serial.println(status);
     switch (status) {
         case STOP:
             /// change bpm
@@ -60,13 +62,20 @@ void loop() {
             break;
         case CHANGE_CLICK:
             /// change click
+            Serial.println("CHANGE_CLICK");
             readRotaryEncoder(encoderClick, CLICK_MIN, CLICK_MAX);
             led_key_display_update();
             break;
-        case RESUME_FROM_CHANGE_CLICK:
+        case CHANGE_CLICK_FROM_STOP:
+            readRotaryEncoder(encoderClick, CLICK_MIN, CLICK_MAX);
+            led_key_display_update();
+            pinMode(SPEAKER_PIN, INPUT); // reduction noise
+            return;
+        case START_FROM_CHANGE_CLICK:
             // TODO:
             pinMode(SPEAKER_PIN, OUTPUT); // restart pin
             status = RUN;
+            break;
         default:
             break;
     }

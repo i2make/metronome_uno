@@ -1,23 +1,32 @@
 #include "helper.h"
 
-void tone01() {
-    tone(SPEAKER_PIN, FREQUENCY_01, DURATION_01);
+void toneLow() {
+    tone(SPEAKER_PIN, FREQUENCY_LOW, DURATION_LOW);
+}
+
+void toneHigh() {
+    tone(SPEAKER_PIN, FREQUENCY_HIGH, DURATION_HIGH);
 }
 
 void led_key_display_update() {
 
     String sBpm;
-    if (encoderBpm.getPosition() >= 100) {
-        sBpm = "TEMP " + String(encoderBpm.getPosition());
-    } else {
-        sBpm = "TEMP  " + String(encoderBpm.getPosition());
-    }
 
     switch (mode) {
         case LED_KEY_S1:
+            if (encoderBpm.getPosition() >= 100) {
+                sBpm = "STOP " + String(encoderBpm.getPosition());
+            } else {
+                sBpm = "STOP  " + String(encoderBpm.getPosition());
+            }
             module.setDisplayToString(sBpm);
             break;
         case LED_KEY_S2:
+            if (encoderBpm.getPosition() >= 100) {
+                sBpm = "RUN  " + String(encoderBpm.getPosition());
+            } else {
+                sBpm = "RUN   " + String(encoderBpm.getPosition());
+            }
             module.setDisplayToString(sBpm);
             break;
         case LED_KEY_S3:
@@ -55,11 +64,20 @@ void led_key_read_button() {
                     break;
                 }
                 if (status == CHANGE_CLICK) {   // from CHANGE_CLICK
-                    status = RESUME_FROM_CHANGE_CLICK;
+                    status = START_FROM_CHANGE_CLICK;
                     break;
+                }
+                if (status == CHANGE_CLICK_FROM_STOP) {
+                    status = START;
                 }
                 break;
             case LED_KEY_S3:            /// Change click button
+                if (status == STOP) {
+                    status = CHANGE_CLICK_FROM_STOP;
+                }
+                if (status == CHANGE_CLICK_FROM_STOP) {
+                    return;
+                }
                 status = CHANGE_CLICK;
                 break;
             case LED_KEY_S4:
@@ -92,8 +110,11 @@ void led_key_read_button() {
                 init_Click_and_Led();
                 kjh_previous_millis = millis();
                 break;
+            default:
+                break;
         }
     }
+
 }
 
 void led_key_LED_update(uint16_t bpm) {
@@ -159,23 +180,36 @@ void led_key_LED_update(uint16_t bpm) {
 }
 
 void sound_update(uint16_t _bpm, byte _divider) {
-    float divider;
 
-    divider = float((1000 * (120.f / encoderBpm.getPosition())) / _divider); // 120 -> 1000
+    // variable
+    auto divider = float((1000 * (120.f / encoderBpm.getPosition())) / _divider); // 120 -> 1000
+    byte click;
 
+    // restart millis
     kjh_current_millis = millis() - kjh_previous_millis;
 
-    byte click = long(float(kjh_current_millis) / divider) % 2;
+    if (_divider == 1) {
+        click = long(float(kjh_current_millis) / divider) % 2; // 0 ~ 1
+    } else {
+        click = long(float(kjh_current_millis) / divider) % _divider; // 0 ~ _divider
+    }
 
+    // skip
     if (click == previousClick) {
         return;
     }
     previousClick = click;
 
-    tone01();
+    // making click
+    if (click % _divider == 0) {
+        toneHigh();
+    } else {
+        toneLow();
+    }
+
 }
 
-void readRotaryEncoder(RotaryEncoder& _encoder, int _min, int _max) {
+void readRotaryEncoder(RotaryEncoder &_encoder, int _min, int _max) {
 
     _encoder.tick();
 
