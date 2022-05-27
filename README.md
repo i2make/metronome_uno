@@ -1,2 +1,2 @@
 # metronome_uno
-metronome for arduino uno
+directory metronome_uno for arduino uno
